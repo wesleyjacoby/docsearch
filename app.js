@@ -1,9 +1,11 @@
 import {
 	itemsToLines,
 	extractLabel,
+	carLabel,
 	findHeadings,
 	findSubheads,
 	findAipHeadings,
+	findCarHeadings,
 	isBlank,
 	isContents,
 	clean,
@@ -159,7 +161,7 @@ async function readPages(name, rec) {
 		const page = await pdf.getPage(i);
 		const tc = await page.getTextContent();
 		const r = extractLabel(itemsToLines(tc.items));
-		pages.push({ p: i, lines: r.lines, label: r.label });
+		pages.push({ p: i, lines: r.lines, label: r.label, car: r.car });
 		page.cleanup();
 		if (i % 25 === 0) {
 			setStatus(
@@ -170,6 +172,20 @@ async function readPages(name, rec) {
 		}
 	}
 	await pdf.destroy();
+	// CAR pages: label each page with the regulation in force at its top (carried over from the page before when the page starts mid-regulation)
+	let carry = "",
+		carryPart = "";
+	for (const pg of pages) {
+		const c = pg.car;
+		if (!c) continue;
+		if (c.part !== carryPart) {
+			carry = "";
+			carryPart = c.part;
+		} // several Parts in one PDF: never carry a regulation number across a Part boundary
+		pg.label = carLabel(c, carry);
+		if (c.last && !isContents(pg.lines)) carry = c.last; // the list-of-regulations pages at the front name every regulation, so they don't count
+		delete pg.car;
+	}
 	stripBoilerplate(pages);
 	return pages;
 }
@@ -178,9 +194,14 @@ async function readPages(name, rec) {
 function makeMeta(pages) {
 	let cur = "";
 	const aip = pages.some((pg) => /^Page (GEN|ENR|AD)\s/.test(pg.label)); // the AIP numbers its paragraphs like headings, so only its own headings count
+	const car = pages.some((pg) => / (CAR Part|SA-CATS) \d+: /.test(pg.label));
 	return pages.map((pg) => {
-		let h = aip ? findAipHeadings(pg.lines) : findHeadings(pg.lines);
-		if (!h.length && !aip) h = [...new Set(findSubheads(pg.lines))];
+		let h = car
+			? findCarHeadings(pg.lines)
+			: aip
+				? findAipHeadings(pg.lines)
+				: findHeadings(pg.lines);
+		if (!h.length && !aip && !car) h = [...new Set(findSubheads(pg.lines))];
 		const o = { l: pg.label, c: cur, h };
 		if (o.h.length) cur = o.h[o.h.length - 1];
 		return o;
@@ -317,6 +338,7 @@ async function loadIndex(name) {
 }
 
 async function loadAll() {
+	await groupsReady;
 	pdfInfo.clear();
 	docs.clear();
 	for (const name of await dbKeys("pdfs")) {
@@ -665,9 +687,10 @@ function headingFor(doc, c, hlWords) {
 
 // "Page 10-187 · Section 10: Operating Procedures" -> plate "10-187", section text. "EQUIPMENT 25 Page 14 of 44" -> plate "14".
 function splitLabel(label) {
-	const m = /Page:?\s+((?:GEN|ENR|AD)\s+\S+|\S+)(?:\s+of\s+\d+)?/i.exec(
-		label || "",
-	);
+	const m =
+		/Page:?\s+((?:GEN|ENR|AD)\s+\S+|Part\s+\d+(?=\s*\u00b7)|\S+)(?:\s+of\s+\d+)?/i.exec(
+			label || "",
+		);
 	if (!m) return { token: "", rest: label || "" };
 	const rest = label.replace(m[0], "").replace(/^[\s·]+|[\s·]+$/g, "");
 	return { token: m[1], rest };
@@ -814,6 +837,30 @@ let justDragged = false;
 
 let scopeOpen = false;
 
+// Document groups for the pills, from groups.json: { "Company": ["OM", "SOP"], ... }. A document belongs to the first group
+// with a word that its name starts with or contains at a word boundary. Anything unmatched goes into "Other".
+let groupDefs = {};
+const groupsReady = fetch("groups.json")
+	.then((r) => r.json())
+	.then((g) => {
+		groupDefs = g || {};
+	})
+	.catch(() => {});
+const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function groupOf(name) {
+	const base = name.replace(/\.pdf$/i, "");
+	for (const [g, words] of Object.entries(groupDefs)) {
+		if (
+			Array.isArray(words) &&
+			words.some((w) =>
+				new RegExp("(^|[^A-Za-z0-9])" + escRe(w), "i").test(base),
+			)
+		)
+			return g;
+	}
+	return "Other";
+}
+
 function renderChips() {
 	const box = $("chips");
 	box.innerHTML = "";
@@ -821,13 +868,29 @@ function renderChips() {
 	if (!names.length) return;
 	const short = (n) => n.replace(/\.pdf$/i, "");
 	const on = names.filter((n) => active.has(n));
+	const byGroup = new Map();
+	for (const n of names) {
+		const g = groupOf(n);
+		if (!byGroup.has(g)) byGroup.set(g, []);
+		byGroup.get(g).push(n);
+	}
+	const order = [...Object.keys(groupDefs), "Other"].filter((g) =>
+		byGroup.has(g),
+	);
+	const grouped = order.length > 1;
+	const full = grouped
+		? order.filter((g) => byGroup.get(g).every((n) => active.has(n)))
+		: [];
+	const covered = new Set(full.flatMap((g) => byGroup.get(g)));
 	const summary = !on.length
 		? "No documents selected"
 		: on.length === names.length
 			? `All ${names.length} documents`
-			: on.length <= 3
-				? on.map(short).join(", ")
-				: `${on.length} of ${names.length} documents`;
+			: full.length && covered.size === on.length
+				? full.join(" + ")
+				: on.length <= 3
+					? on.map(short).join(", ")
+					: `${on.length} of ${names.length} documents`;
 
 	const row = document.createElement("div");
 	row.className = "scope";
@@ -857,8 +920,8 @@ function renderChips() {
 
 	if (!scopeOpen) return;
 	const grid = document.createElement("div");
-	grid.className = "chipgrid";
-	for (const name of names) {
+	grid.className = "chipgrid" + (grouped ? " grouped" : "");
+	const chipFor = (name) => {
 		const b = document.createElement("button");
 		b.className = "chip" + (active.has(name) ? " on" : "");
 		b.dataset.name = name;
@@ -871,12 +934,44 @@ function renderChips() {
 			renderChips();
 			if (lastSearch) doSearch();
 		};
-		grid.appendChild(b);
+		return b;
+	};
+	if (grouped) {
+		for (const g of order) {
+			const list = byGroup.get(g);
+			const sec = document.createElement("div");
+			sec.className = "chipgroup";
+			const nOn = list.filter((n) => active.has(n)).length;
+			const head = document.createElement("button");
+			head.className = "gname" + (nOn === list.length ? " all" : "");
+			head.title =
+				nOn === list.length
+					? `Leave out all ${g} documents`
+					: `Include all ${g} documents`;
+			head.innerHTML = "<span></span><small></small>";
+			head.firstChild.textContent = g;
+			head.lastChild.textContent = `${nOn}/${list.length}`;
+			head.onclick = () => {
+				for (const n of list)
+					nOn === list.length ? active.delete(n) : active.add(n);
+				saveActive();
+				renderChips();
+				if (lastSearch) doSearch();
+			};
+			const chips = document.createElement("div");
+			chips.className = "gchips";
+			for (const n of list) chips.appendChild(chipFor(n));
+			sec.append(head, chips);
+			grid.appendChild(sec);
+		}
+	} else {
+		for (const name of names) grid.appendChild(chipFor(name));
 	}
 	const hint = document.createElement("p");
 	hint.className = "hint";
-	hint.textContent =
-		"Tap a document to include or leave it out. Drag one (touch: press and hold first) to change the order.";
+	hint.textContent = grouped
+		? "Tap a document to include or leave it out, or a group name to switch the whole group. Drag a document (touch: press and hold first) to change the order within its group."
+		: "Tap a document to include or leave it out. Drag one (touch: press and hold first) to change the order.";
 	grid.appendChild(hint);
 	box.appendChild(grid);
 }
@@ -940,7 +1035,7 @@ function renderChips() {
 		}
 		e.preventDefault();
 		for (const c of box.querySelectorAll(".chip[data-name]")) {
-			if (c === d.chip) continue;
+			if (c === d.chip || c.parentNode !== d.chip.parentNode) continue; // reorder within a group only
 			const r = c.getBoundingClientRect();
 			if (
 				e.clientX >= r.left &&
@@ -1139,7 +1234,8 @@ async function renderPage(i, gen) {
 			transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null,
 		}).promise;
 		const tc = await page.getTextContent();
-		it.label = extractLabel(itemsToLines(tc.items)).label;
+		const lr = extractLabel(itemsToLines(tc.items));
+		it.label = lr.car ? carLabel(lr.car) : lr.label;
 		const hl = document.createElement("div");
 		hl.className = "hl";
 		if (v.regs.length) {

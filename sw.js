@@ -1,6 +1,6 @@
 // Offline support. App files: network first, cache as fallback. Library files from the CDN: cache first.
 // (The search model files are cached separately by the model library itself.)
-const CACHE = "docsearch-v8";
+const CACHE = "docsearch-v13";
 const SHELL = [
 	"./",
 	"index.html",
@@ -11,6 +11,7 @@ const SHELL = [
 	"glossary.json",
 	"abbreviations.json",
 	"exclude.json",
+	"groups.json",
 	"manifest.json",
 	"icon-180.png",
 	"icon-192.png",

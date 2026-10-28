@@ -67,6 +67,65 @@ export function itemsToLines(items) {
  * Returns { label, lines } with those header/footer lines taken out of the text.
  */
 export function extractLabel(lines) {
+	// CAR / CATS style (saved from the SACAA site by get_cars.py): footer "CAR Part 91 - General Aviation and Operating Flight Rules page 3 of 13"
+	// or "SA-CATS 91 - General Aviation and Operating Flight Rules page 3 of 13".
+	// Pages are labelled by the regulation number in force at the top of the page, e.g. "91.06.8".
+	const cs = Math.max(0, lines.length - 3);
+	const ci = lines
+		.slice(cs)
+		.findIndex((x) =>
+			/^(?:CAR Part|SA-CATS) \d+\s*-\s*.+\s+page\s+\d+\s+of\s+\d+$/i.test(x),
+		);
+	if (ci >= 0) {
+		const fi = cs + ci;
+		const m =
+			/^(CAR Part|SA-CATS) (\d+)\s*-\s*(.+?)\s+page\s+\d+\s+of\s+\d+$/i.exec(
+				lines[fi],
+			);
+		const kind = /cats/i.test(m[1]) ? "SA-CATS" : "CAR Part";
+		const body = lines.filter((_, j) => j !== fi);
+		const regAt = (x) => {
+			const r =
+				/^(\d{1,3}\.\d{2}\.\d+)(?:\s*[\u2013-]\s*\d{1,3}\.\d{2}\.\d+)?(?=\s*(?:[(A-Z\u201c"]|$))/.exec(
+					x,
+				);
+			return r && r[1].split(".")[0] === m[2] ? r[1] : "";
+		}; // must belong to this Part (not "2.10.1" in a training annex)
+		let first = "",
+			firstAt = -1,
+			last = "";
+		const num = (r) => r.split(".").map(Number);
+		// regulations run in order; a line that starts with an earlier or far-off number is a cross-reference, not a regulation
+		const inOrder = (r) => {
+			if (!last) return true;
+			const a = num(r),
+				b = num(last);
+			if (kind === "SA-CATS")
+				return (
+					a[0] === b[0] && (a[1] > b[1] || (a[1] === b[1] && a[2] >= b[2]))
+				);
+			/* standards are sparse */ return (
+				a[0] === b[0] &&
+				((a[1] === b[1] && a[2] >= b[2]) ||
+					(a[1] > b[1] && a[1] - b[1] <= 2 && a[2] <= 2))
+			);
+		}; // same subpart going forward, or the start of the next one
+		body.forEach((x, j) => {
+			const r = regAt(x);
+			if (r && inOrder(r)) {
+				if (!first) {
+					first = r;
+					firstAt = j;
+				}
+				last = r;
+			}
+		});
+		return {
+			label: "",
+			lines: body,
+			car: { kind, part: m[2], title: m[3].trim(), first, firstAt, last },
+		};
+	}
 	// AIP style: "Civil Aviation Authority", the page id ("ENR 2.1-25"), "AIP South Africa", the body, then the effective date ("15 JAN 25") and "AMDT 1/25"
 	const ai = lines
 		.slice(0, 8)
@@ -202,6 +261,48 @@ export function extractLabel(lines) {
 	};
 }
 
+/** Label for a CAR page: the regulation in force at the top of the page, then the Part. `carry` is the last regulation of the page before. */
+export function carLabel(c, carry = "") {
+	const kind = c.kind || "CAR Part";
+	const tok =
+		c.first && c.firstAt < 5
+			? c.first
+			: carry || c.first || (kind === "SA-CATS" ? "Intro" : "Part " + c.part);
+	return `Page ${tok} \u00b7 ${kind} ${c.part}: ${c.title}`;
+}
+
+/** CAR regulations: "Crash axes and crowbars" above "91.04.19 (1) No owner ..." becomes the heading "91.04.19 Crash axes and crowbars". */
+export function findCarHeadings(lines) {
+	const out = [];
+	lines.forEach((x, j) => {
+		const m =
+			/^(\d{1,3}\.\d{2}\.\d+)(?:\s*[\u2013-]\s*\d{1,3}\.\d{2}\.\d+)?(?:\s+(.*))?$/.exec(
+				x,
+			);
+		if (!m || /^[a-z]/.test(m[2] || "")) return; // a wrapped sentence that merely starts with a cross-reference
+		if (m[2] && /(?:\.\s?){4,}/.test(m[2])) m[2] = ""; // dotted-leader placeholder lines
+		const prev = (lines[j - 1] || "").trim();
+		const caps = m[2] && /[A-Z]{3}/.test(m[2]) && m[2] === m[2].toUpperCase(); // CATS: "91.02.1 CREW COMPOSITION AND QUALIFICATIONS"
+		if (caps) {
+			let t = `${m[1]} ${m[2]}`;
+			if (t.length > 110) t = t.slice(0, 110).replace(/\s+\S*$/, "") + "\u2026";
+			out.push(t);
+			return;
+		}
+		const isTitle =
+			prev &&
+			prev.length <= 90 &&
+			/^[A-Z]/.test(prev) &&
+			!/[.;:,\u2014]$/.test(prev) &&
+			!/^(SUBPART|Division|Part)\b/i.test(prev);
+		const rest = (m[2] || "").replace(/^\(\d+\)\s*/, "");
+		let t = isTitle ? `${m[1]} ${prev}` : rest ? `${m[1]} ${rest}` : m[1];
+		if (t.length > 110) t = t.slice(0, 110).replace(/\s+\S*$/, "") + "\u2026";
+		out.push(t);
+	});
+	return out;
+}
+
 /** Numbered headings on a page ("10.4.5.2 The Procedure for a Monitored Approach is as follows:"), shortened to 110 characters. */
 export function findHeadings(lines) {
 	const out = [];
@@ -273,6 +374,17 @@ export function findAipHeadings(lines) {
 
 /** Contents pages are full of dotted leader lines and only repeat the headings. */
 export const isContents = (lines) => {
+	if (
+		lines.filter((x) =>
+			/^\d{1,3}\.\d{2}\.\d+\s+[A-Z][A-Z0-9 ,;:'()\/&\u2013-]{4,}$/.test(x),
+		).length >= 4
+	)
+		return true; // CATS "list of standards" page: several ALL-CAPS standard titles on one page
+	if (
+		lines.slice(0, 3).some((x) => /^CONTENTS$/.test(x.trim())) &&
+		lines.filter((x) => /^\d{1,3}\.\d{2}\.\d+(\s|$)/.test(x)).length >= 3
+	)
+		return true; // CATS contents list
 	const dotted = lines.filter((l) => /(?:\.\s?){6,}/.test(l)).length;
 	if (dotted >= 8 || (dotted >= 4 && dotted * 2 >= lines.length)) return true;
 	// numbered contents lines that end in a page reference, e.g. "2.3 AUTHORITY AND DUTIES 27" or "0.1 TITLE PAGE 0-3"
@@ -281,7 +393,15 @@ export const isContents = (lines) => {
 			/^[0-9A-Z]{1,4}(\.\d+)*\.?\s+\S/.test(l) &&
 			/\s\d{1,3}(-\d{1,3})?$/.test(l),
 	).length;
-	return numbered >= 10 && numbered * 10 >= lines.length * 6;
+	if (numbered >= 10 && numbered * 10 >= lines.length * 6) return true;
+	// CAR "list of regulations" pages: short lines of just a regulation number and its title ("91.01.2 Authority of PIC and crew members")
+	const regList = lines.filter(
+		(x) =>
+			x.length <= 90 &&
+			/^\d{1,3}\.\d{2}\.\d+\s+[A-Z]/.test(x) &&
+			!/[.;:,]$/.test(x),
+	).length;
+	return regList >= 10 && regList * 10 >= lines.length * 6;
 };
 
 /** Remove headers/footers that repeat on many pages (mutates pages[i].lines). Returns how many distinct lines were removed. */

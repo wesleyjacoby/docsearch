@@ -69,3 +69,22 @@ A plain list of groups of words that mean the same thing for searching, for exam
 a passage containing any other word in the group counts as a match too, and the alternatives are
 shown with the matching passages. Add your own groups (company abbreviations, the way pilots say things).
 Keep each group to genuine synonyms; loose groups add noise. Reload the page after editing.
+
+## Civil Aviation Regulations (CARs)
+
+The SACAA site shows the regulations as live web pages, so there is no PDF to download. `get_cars.py`
+(a separate tool, not part of the app, in its own folder) saves chosen Parts as PDFs:
+
+    python get_cars.py 61 91 121
+
+It writes one `CAR Part NN.pdf` per Part, with a header on every page ("CAR Part 91 - General Aviation and
+Operating Flight Rules"). Add those PDFs in the app like any other document. Results are labelled with the
+regulation number (for example "91.06.8") and titled with the regulation's own heading. The list-of-regulations
+pages at the front of each Part are left out of the search, because they only repeat the titles.
+
+## Document groups
+
+`groups.json` sorts the document pills into labelled groups (Company, Aircraft, Regulations, Reference). Each group lists
+words; a document joins the first group that has a word its name starts with (or contains at a word boundary).
+Anything unmatched appears under "Other". Tap a group name to include or leave out the whole group. To move a
+document, change its word in `groups.json`. No re-indexing needed.

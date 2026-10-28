@@ -1,0 +1,6 @@
+{
+	"Company": ["OM", "SOP", "FAM", "MEL", "NEF MEL"],
+	"Aircraft": ["FCOM", "FCTM", "QRH"],
+	"Regulations": ["CAR", "CATS", "SA-CATS", "SA AIP", "AIP"],
+	"Reference": ["DG", "IATA"]
+}

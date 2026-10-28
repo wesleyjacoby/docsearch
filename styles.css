@@ -946,3 +946,48 @@ label.filebtn:focus-within,
 #vinner {
 	transform-origin: 0 0;
 }
+
+/* grouped document pills */
+.chipgrid.grouped {
+	display: block;
+}
+.chipgroup + .chipgroup {
+	margin-top: 14px;
+	padding-top: 12px;
+	border-top: 1px solid var(--line);
+}
+.gchips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+.gname {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 8px;
+	margin: 0 0 8px;
+	padding: 2px 0;
+	border: 0;
+	background: none;
+	color: var(--ink-2);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+.gname small {
+	font-size: 12px;
+	font-weight: 550;
+	letter-spacing: 0;
+	text-transform: none;
+	font-variant-numeric: tabular-nums;
+	opacity: 0.8;
+}
+.gname.all {
+	color: var(--accent-text);
+}
+@media (hover: hover) {
+	.gname:hover {
+		color: var(--accent-text);
+	}
+}
