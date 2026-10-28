@@ -1063,7 +1063,8 @@ async function layoutPages(goto) {
 	const first = await v.pdf.getPage(1);
 	const b = first.getViewport({ scale: 1 });
 	first.cleanup();
-	const avail = Math.min(sc.clientWidth - 12, MAX_PAGE_WIDTH);
+	const avail = Math.min(sc.clientWidth - 22, MAX_PAGE_WIDTH);
+	sc.classList.toggle("zoomed", v.zoom > 1.001);
 	v.scale = (avail / b.width) * v.zoom;
 	const w = b.width * v.scale,
 		h = b.height * v.scale;
@@ -1077,7 +1078,10 @@ async function layoutPages(goto) {
 		frag.appendChild(wrap);
 		v.items[i] = { wrap, state: 0, want: false, label: "" };
 	}
-	sc.appendChild(frag);
+	const inner = document.createElement("div");
+	inner.id = "vinner";
+	inner.appendChild(frag);
+	sc.appendChild(inner);
 	scrollToPage(goto || 1);
 	v.observer = new IntersectionObserver(
 		(entries) => {
@@ -1218,6 +1222,70 @@ function closeViewer() {
 	$("viewer").hidden = true;
 	document.body.classList.remove("noscroll");
 }
+
+// pinch to zoom: scale the pages live with a CSS transform, then redraw them sharp at the new zoom when the fingers lift
+(() => {
+	const sc = $("vscroll");
+	let p = null;
+	const dist = (t) =>
+		Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+	const centre = (t) => {
+		const r = sc.getBoundingClientRect();
+		return [
+			(t[0].clientX + t[1].clientX) / 2 - r.left,
+			(t[0].clientY + t[1].clientY) / 2 - r.top,
+		];
+	};
+	sc.addEventListener(
+		"touchstart",
+		(e) => {
+			if (e.touches.length !== 2 || !v.pdf) return;
+			const [cx, cy] = centre(e.touches);
+			p = {
+				d0: dist(e.touches),
+				ratio: 1,
+				cx,
+				cy,
+				fx: (cx + sc.scrollLeft) / sc.scrollWidth,
+				fy: (cy + sc.scrollTop) / sc.scrollHeight,
+			};
+			const inner = $("vinner");
+			if (inner)
+				inner.style.transformOrigin = `${cx + sc.scrollLeft - inner.offsetLeft}px ${cy + sc.scrollTop - inner.offsetTop}px`;
+		},
+		{ passive: true },
+	);
+	sc.addEventListener(
+		"touchmove",
+		(e) => {
+			if (!p || e.touches.length !== 2) return;
+			e.preventDefault();
+			p.ratio = Math.max(
+				0.5 / v.zoom,
+				Math.min(3 / v.zoom, dist(e.touches) / p.d0),
+			);
+			const inner = $("vinner");
+			if (inner) inner.style.transform = `scale(${p.ratio})`;
+		},
+		{ passive: false },
+	);
+	const end = async (e) => {
+		if (!p || e.touches.length >= 2) return;
+		const g = p;
+		p = null;
+		const inner = $("vinner");
+		if (inner) {
+			inner.style.transform = "";
+			inner.style.transformOrigin = "";
+		}
+		if (Math.abs(g.ratio - 1) < 0.03) return;
+		await zoomTo(v.zoom * g.ratio, true);
+		sc.scrollLeft = g.fx * sc.scrollWidth - g.cx;
+		sc.scrollTop = g.fy * sc.scrollHeight - g.cy;
+	};
+	sc.addEventListener("touchend", end, { passive: true });
+	sc.addEventListener("touchcancel", end, { passive: true });
+})();
 
 async function zoomTo(z) {
 	v.zoom = Math.max(0.5, Math.min(3, z));

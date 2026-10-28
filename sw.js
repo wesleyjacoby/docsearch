@@ -1,6 +1,6 @@
 // Offline support. App files: network first, cache as fallback. Library files from the CDN: cache first.
 // (The search model files are cached separately by the model library itself.)
-const CACHE = "docsearch-v7";
+const CACHE = "docsearch-v8";
 const SHELL = [
 	"./",
 	"index.html",

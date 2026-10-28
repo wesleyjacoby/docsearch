@@ -559,7 +559,10 @@ dialog button.danger {
 }
 #vscroll {
 	flex: 1;
-	overflow: auto;
+	overflow-y: auto;
+	overflow-x: hidden;
+	touch-action: pan-x pan-y;
+	overscroll-behavior: contain;
 	-webkit-overflow-scrolling: touch;
 	padding: 10px;
 	background: var(--canvas);
@@ -934,4 +937,12 @@ label.filebtn:focus-within,
 		background: var(--navy);
 		filter: brightness(1.25);
 	}
+}
+
+/* zoomed in: allow sideways panning; at fit width the page stays locked horizontally */
+#vscroll.zoomed {
+	overflow-x: auto;
+}
+#vinner {
+	transform-origin: 0 0;
 }
