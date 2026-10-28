@@ -1,0 +1,9 @@
+# Never publish manuals or exported indexes (they contain manual text)
+*.pdf
+*.bin
+docsearch-index*
+
+# Local-only files
+serve.py
+.DS_Store
+*.log
