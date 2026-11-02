@@ -1,6 +1,6 @@
 // Offline support. App files: network first, cache as fallback. Library files from the CDN: cache first.
 // (The search model files are cached separately by the model library itself.)
-const CACHE = "docsearch-v16";
+const CACHE = "docsearch-v17";
 const SHELL = [
 	"./",
 	"index.html",
@@ -22,7 +22,14 @@ self.addEventListener("install", (e) => {
 	e.waitUntil(
 		caches
 			.open(CACHE)
-			.then((c) => c.addAll(SHELL))
+			.then((c) =>
+				// One missing file must not stop the whole update, and GitHub Pages' 10-minute HTTP cache must not serve old copies.
+				Promise.all(
+					SHELL.map((u) =>
+						c.add(new Request(u, { cache: "reload" })).catch(() => {}),
+					),
+				),
+			)
 			.then(() => self.skipWaiting()),
 	);
 });
@@ -46,7 +53,7 @@ self.addEventListener("fetch", (e) => {
 	const url = new URL(req.url);
 	if (url.origin === location.origin) {
 		e.respondWith(
-			fetch(req)
+			fetch(req, { cache: "no-cache" })
 				.then((res) => {
 					const copy = res.clone();
 					caches.open(CACHE).then((c) => c.put(req, copy));
