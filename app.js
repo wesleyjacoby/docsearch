@@ -1562,6 +1562,16 @@ async function zoomTo(z) {
 
 // ---------- wire up ----------
 $("go").onclick = doSearch;
+// Clear: empty the box, keep the keyboard up for the next question. Shown only while there is text.
+const syncClear = () => ($("clearbtn").hidden = !$("q").value);
+$("q").addEventListener("input", syncClear);
+$("clearbtn").addEventListener("pointerdown", (e) => e.preventDefault()); // keep focus in the box so the keyboard stays
+$("clearbtn").onclick = () => {
+	$("q").value = "";
+	syncClear();
+	$("q").focus();
+};
+syncClear();
 $("q").addEventListener("keydown", (e) => {
 	if (e.key === "Enter") {
 		e.preventDefault();

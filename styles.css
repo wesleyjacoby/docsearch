@@ -1100,3 +1100,31 @@ button.cite {
 	font-size: 13px;
 	font-weight: 600;
 }
+
+/* Solid colour behind the iPad status bar (time, date, app name), so page content never scrolls up behind it. */
+body::before {
+	content: "";
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: env(safe-area-inset-top);
+	background: var(--navy);
+	z-index: 100;
+	pointer-events: none;
+}
+
+#clearbtn {
+	border: 0;
+	border-radius: var(--radius);
+	background: var(--surface-2);
+	color: var(--ink-2);
+	font-weight: 600;
+	padding: 11px 16px;
+}
+#clearbtn:active {
+	filter: brightness(0.94);
+}
+#clearbtn[hidden] {
+	display: none;
+}
