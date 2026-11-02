@@ -883,11 +883,13 @@ function aiBlock(ls) {
 	t.className = "aitext" + (st.status === "error" ? " err" : "");
 	if (st.status === "error") t.textContent = st.text;
 	else {
-		t.innerHTML = escHtml(st.text).replace(/\[S(\d+)\]/g, (m, n) =>
-			st.sources[n - 1]
-				? `<button class="cite" data-i="${n - 1}">${n}</button>`
-				: m,
-		);
+		t.innerHTML = escHtml(st.text)
+			.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+			.replace(/\[S(\d+)\]/g, (m, n) =>
+				st.sources[n - 1]
+					? `<button class="cite" data-i="${n - 1}">${n}</button>`
+					: m,
+			);
 		t.querySelectorAll("button.cite").forEach((b) => {
 			b.onclick = () => openSource(st.sources[+b.dataset.i]);
 		});

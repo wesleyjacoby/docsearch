@@ -28,7 +28,7 @@ export function saveSettings(s) {
 const SYSTEM = `You answer questions for a Boeing 737 pilot using ONLY the numbered passages supplied from company and manufacturer manuals (OM, SOP, FAM, FCOM, FCTM, QRH, MEL, regulations and similar).
 
 Rules:
-1. Answer directly: one to four short sentences, or a short list when the question has several parts. Give the exact figures, limits and wording the passage uses.
+1. Answer directly: one to four short sentences, or a short list when the question has several parts. If the question is broad, cover the most useful points briefly (about 200 words at most) and say which narrower question would help. Give the exact figures, limits and wording the passage uses.
 2. Cite every statement with its passage tag, for example [S1] or [S2][S3]. Never cite a passage that does not say it.
 3. If the passages do not contain the answer, say so plainly and suggest what to search for. Never fill gaps from general knowledge.
 4. If passages disagree, show both with their sources. Precedence, as stated in the SOP: procedures and limitations in the FCOM, QRH, MEL and CDL take precedence over the SOP; policy and legislation in the OM take precedence over the SOP.
@@ -70,7 +70,7 @@ export async function askClaude({ key, model, question, sources, signal }) {
 		},
 		body: JSON.stringify({
 			model,
-			max_tokens: 800,
+			max_tokens: 2000,
 			system: SYSTEM,
 			messages: [{ role: "user", content: buildPrompt(question, sources) }],
 		}),
@@ -101,5 +101,9 @@ export async function askClaude({ key, model, question, sources, signal }) {
 		.join("\n")
 		.trim();
 	if (!text) throw new Error("Claude returned no text.");
-	return text;
+	// Never show a half-finished answer without saying so.
+	return data.stop_reason === "max_tokens"
+		? text +
+				"\n\n[The answer was cut off because it ran long. Ask a narrower question, or tap Ask again.]"
+		: text;
 }
