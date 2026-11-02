@@ -136,7 +136,8 @@ header {
 #go:active {
 	filter: brightness(0.9);
 }
-#docbtn {
+#docbtn,
+#aibtn {
 	border: 1.5px solid var(--line);
 	border-radius: var(--radius);
 	background: var(--surface);
@@ -648,6 +649,7 @@ label.filebtn,
 		border-color: var(--accent-hover) !important;
 	}
 	#docbtn:hover,
+	#aibtn:hover,
 	.resbar button:hover,
 	.row button:hover,
 	#vbar button:hover,
@@ -855,13 +857,15 @@ label.filebtn:focus-within,
 }
 
 /* ---------- PilotCV-style finish: navy header, gold accents, one radius ---------- */
-#docbtn {
+#docbtn,
+#aibtn {
 	background: transparent;
 	border-color: rgba(255, 255, 255, 0.22);
 	color: #e9edf5;
 }
 @media (hover: hover) {
-	#docbtn:hover {
+	#docbtn:hover,
+	#aibtn:hover {
 		background: rgba(255, 255, 255, 0.08);
 		border-color: var(--accent);
 		color: var(--accent);
@@ -999,13 +1003,6 @@ label.filebtn:focus-within,
 	color: var(--accent-text);
 	text-decoration: underline;
 	cursor: pointer;
-}
-#aibtn {
-	border: 1.5px solid var(--line);
-	border-radius: var(--radius);
-	background: var(--surface);
-	padding: 8px 12px;
-	font-weight: 700;
 }
 .fieldlabel {
 	display: block;
