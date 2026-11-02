@@ -23,6 +23,7 @@
                     autocomplete="off" autocapitalize="none" aria-label="Search the manuals">
                 <button id="go">Search</button>
             </div>
+            <button id="aibtn" aria-label="Ask Claude settings" title="Ask Claude settings">AI</button>
             <button id="docbtn">Documents</button>
         </div>
     </header>
@@ -53,6 +54,24 @@
             <p class="note" style="margin:0">A search aid only. Check the page you open, and its revision date, against
                 the official document.</p>
             <button id="closedocs" class="plain">Close</button>
+        </div>
+    </dialog>
+
+    <dialog id="aiset" class="small">
+        <h3>Ask Claude</h3>
+        <p class="note">After a search, tap <b>Ask Claude</b> to get a short answer with sources, written from the best
+            matching pages. Needs internet. Only your question and the text of those pages are sent, and only when you
+            tap the button. The key stays in this browser.</p>
+        <label class="fieldlabel" for="aikey">API key</label>
+        <input id="aikey" type="password" autocomplete="off" autocapitalize="none" spellcheck="false"
+            placeholder="sk-ant-...">
+        <label class="fieldlabel" for="aimodel">Model</label>
+        <select id="aimodel"></select>
+        <p id="aimsg" class="note"></p>
+        <div class="dialogfoot" style="justify-content:space-between">
+            <button id="aiclear" class="plain danger">Remove key</button>
+            <span><button id="aiclose" class="plain">Close</button>
+                <button id="aisave" class="plain">Save</button></span>
         </div>
     </dialog>
 

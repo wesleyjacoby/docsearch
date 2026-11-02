@@ -7,7 +7,7 @@ Search finds the right pages; tap a result to open the PDF at that page with the
 
 Upload these files together to a GitHub Pages repo (same folder, no sub-folders):
 
-    index.html  styles.css  app.js  lib.js  worker.js  glossary.json  abbreviations.json  exclude.json  sw.js  manifest.json  icon-180.png  icon-192.png  icon-512.png
+    index.html  styles.css  app.js  lib.js  ask.js  worker.js  glossary.json  abbreviations.json  exclude.json  sw.js  manifest.json  icon-180.png  icon-192.png  icon-512.png
 
 Open the page in Safari on the iPad, then Share > Add to Home Screen. Always open it from the Home Screen icon afterwards.
 
@@ -88,3 +88,10 @@ pages at the front of each Part are left out of the search, because they only re
 words; a document joins the first group that has a word its name starts with (or contains at a word boundary).
 Anything unmatched appears under "Other". Tap a group name to include or leave out the whole group. To move a
 document, change its word in `groups.json`. No re-indexing needed.
+
+## Ask Claude (optional, needs internet)
+
+Tap **AI** (top right) and paste an Anthropic API key, then pick a model. After any search, tap **Ask Claude** to get a short answer
+written from the six best-matching pages, with numbered sources that open the PDF at that page. Only your question and the text of
+those pages are sent, and only when you tap the button. The key is stored in this browser only. Offline, search works as before.
+Keep a spend limit on the key in the Claude Console.

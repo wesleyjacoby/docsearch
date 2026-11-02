@@ -16,6 +16,13 @@ import {
 	snippet,
 	wordRe,
 } from "./lib.js";
+import {
+	MODELS,
+	loadSettings,
+	saveSettings,
+	pageText,
+	askClaude,
+} from "./ask.js";
 
 const PDFJS = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/";
 const TF = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3";
@@ -600,7 +607,7 @@ async function doSearch() {
 	for (const d of docs.values()) {
 		if (!active.has(d.name)) continue;
 		const n = d.chunks.length;
-		const bestByPage = new Map();
+		const scored = new Array(n);
 		for (let i = 0; i < n; i++) {
 			let dot = 0;
 			const o = i * DIM;
@@ -625,9 +632,13 @@ async function doSearch() {
 				for (const r of phrases) if (r.test(tl)) hit++;
 				score += PHRASE_WEIGHT * (hit / phrases.length);
 			}
-			const p = d.chunks[i].p,
+			scored[i] = { i, score };
+		}
+		const bestByPage = new Map();
+		for (const h of scored) {
+			const p = d.chunks[h.i].p,
 				prev = bestByPage.get(p);
-			if (!prev || score > prev.score) bestByPage.set(p, { i, score });
+			if (!prev || h.score > prev.score) bestByPage.set(p, h);
 		}
 		const top = [...bestByPage.values()]
 			.sort((a, b) => b.score - a.score)
@@ -743,14 +754,173 @@ function resultCard(hit, rank, showDoc) {
 			? `<div class="sec">${showDoc ? `<span class="doc">${docName}</span>` : ""}${rest && rest !== title ? `<span>${escHtml(rest)}</span>` : ""}${seen.has(key) ? `<span class="viewed">viewed</span>` : ""}</div>`
 			: "") +
 		`<div class="snip">${snippet(c.t, plan.hl, 420)}</div>` +
+		(c.t.length > 460
+			? `<span class="snipmore" role="button" tabindex="0">Show more text</span>`
+			: "") +
 		(status ? `<div class="tags">${status}</div>` : "") +
 		`</div>`;
+	const more = card.querySelector(".snipmore");
+	if (more) {
+		let open = false;
+		const toggle = (e) => {
+			e.stopPropagation(); // do not open the PDF
+			if (e.type === "keydown" && e.key !== "Enter" && e.key !== " ") return;
+			e.preventDefault();
+			open = !open;
+			card.querySelector(".snip").innerHTML = snippet(
+				c.t,
+				plan.hl,
+				open ? 6000 : 420,
+			);
+			more.textContent = open ? "Show less" : "Show more text";
+		};
+		more.addEventListener("click", toggle);
+		more.addEventListener("keydown", toggle);
+	}
 	card.onclick = () => {
 		seen.add(key);
 		card.classList.add("seen");
 		openViewer(doc.name, c.p, plan.hl);
 	};
 	return card;
+}
+
+// ---------- Ask Claude ----------
+let ai = loadSettings();
+const AI_PAGES = 6; // how many of the best pages are sent
+
+function aiSources(ls) {
+	const out = [],
+		seen = new Set();
+	for (const hit of ls.overall) {
+		const d = hit.doc,
+			p = d.chunks[hit.i].p,
+			key = d.name + "#" + p;
+		if (seen.has(key)) continue;
+		seen.add(key);
+		const m = d.meta && d.meta[p - 1];
+		const parts = d.chunks.filter((c) => c.p === p).map((c) => clean(c.t));
+		out.push({
+			doc: d.name.replace(/\.pdf$/i, ""),
+			name: d.name,
+			page: p,
+			label: (m && m.l) || d.chunks[hit.i].l || "",
+			text: pageText(parts),
+		});
+		if (out.length >= AI_PAGES) break;
+	}
+	return out;
+}
+
+async function askAI() {
+	const ls = lastSearch;
+	if (!ls || (ls.ai && ls.ai.status === "loading")) return;
+	if (!ai.key) {
+		openAiSettings("Paste your API key to use this.");
+		return;
+	}
+	if (!navigator.onLine) {
+		ls.ai = {
+			status: "error",
+			text: "You are offline. Ask Claude needs internet; the search results below still work.",
+		};
+		renderResults();
+		return;
+	}
+	const sources = aiSources(ls);
+	ls.ai = { status: "loading", sources, model: ai.model };
+	renderResults();
+	try {
+		const text = await askClaude({
+			key: ai.key,
+			model: ai.model,
+			question: ls.q,
+			sources,
+		});
+		ls.ai = { status: "done", text, sources, model: ai.model };
+	} catch (e) {
+		ls.ai = { status: "error", text: String((e && e.message) || e), sources };
+	}
+	if (lastSearch === ls) renderResults();
+}
+
+function aiBlock(ls) {
+	const box = document.createElement("div");
+	box.className = "ai";
+	const st = ls.ai;
+	const modelName =
+		(MODELS.find((m) => m.id === ((st && st.model) || ai.model)) || {}).name ||
+		"";
+	if (!st) {
+		box.innerHTML =
+			'<div class="aihead"><span>Want a written answer from these pages?</span></div>';
+		const b = document.createElement("button");
+		b.className = "askbtn";
+		b.textContent = "Ask Claude";
+		b.onclick = askAI;
+		box.appendChild(b);
+		return box;
+	}
+	const head = document.createElement("div");
+	head.className = "aihead";
+	head.innerHTML = `<span>${st.status === "loading" ? "Asking Claude…" : "Claude's answer"} · ${escHtml(modelName.replace(/ \(.*/, ""))}</span>`;
+	if (st.status !== "loading") {
+		const again = document.createElement("button");
+		again.className = "plain";
+		again.textContent = "Ask again";
+		again.onclick = askAI;
+		head.appendChild(again);
+	}
+	box.appendChild(head);
+	if (st.status === "loading") {
+		const p = document.createElement("div");
+		p.className = "aitext";
+		p.textContent = `Reading ${st.sources.length} pages…`;
+		box.appendChild(p);
+		return box;
+	}
+	const t = document.createElement("div");
+	t.className = "aitext" + (st.status === "error" ? " err" : "");
+	if (st.status === "error") t.textContent = st.text;
+	else {
+		t.innerHTML = escHtml(st.text).replace(/\[S(\d+)\]/g, (m, n) =>
+			st.sources[n - 1]
+				? `<button class="cite" data-i="${n - 1}">${n}</button>`
+				: m,
+		);
+		t.querySelectorAll("button.cite").forEach((b) => {
+			b.onclick = () => openSource(st.sources[+b.dataset.i]);
+		});
+	}
+	box.appendChild(t);
+	if (st.status === "done") {
+		const list = document.createElement("div");
+		list.className = "sources";
+		st.sources.forEach((s, i) => {
+			const b = document.createElement("button");
+			b.textContent = `${i + 1}. ${s.doc} · ${s.label ? s.label.replace(/\s*·\s*/g, " · ") + " · " : ""}PDF p.${s.page}`;
+			b.onclick = () => openSource(s);
+			list.appendChild(b);
+		});
+		box.appendChild(list);
+		const foot = document.createElement("div");
+		foot.className = "aifoot";
+		foot.textContent =
+			"Written from the pages above. Open the source and check it before relying on it.";
+		box.appendChild(foot);
+	}
+	return box;
+}
+
+function openSource(s) {
+	openViewer(s.name, s.page, lastSearch ? lastSearch.plan.hl : []);
+}
+
+function openAiSettings(msg = "") {
+	$("aikey").value = ai.key;
+	$("aimodel").value = ai.model;
+	$("aimsg").textContent = msg;
+	$("aiset").showModal();
 }
 
 function renderResults() {
@@ -779,6 +949,7 @@ function renderResults() {
 	};
 	bar.append(note, tog);
 	out.appendChild(bar);
+	out.appendChild(aiBlock(ls));
 
 	if (ls.mode === "overall") {
 		const shown = ls.moreOverall
@@ -1403,6 +1574,30 @@ $("docbtn").onclick = () => {
 	$("docs").showModal();
 };
 $("closedocs").onclick = () => $("docs").close();
+$("aimodel").innerHTML = MODELS.map(
+	(m) => `<option value="${m.id}">${m.name}</option>`,
+).join("");
+$("aibtn").onclick = () => openAiSettings();
+$("aiclose").onclick = () => $("aiset").close();
+$("aisave").onclick = () => {
+	ai = { key: $("aikey").value.trim(), model: $("aimodel").value };
+	if (!saveSettings(ai)) {
+		$("aimsg").textContent =
+			"This browser would not save the key; it will work until the page is closed.";
+		return;
+	}
+	$("aiset").close();
+	if (lastSearch && lastSearch.ai && lastSearch.ai.status === "error") {
+		lastSearch.ai = null;
+		renderResults();
+	}
+};
+$("aiclear").onclick = () => {
+	ai = { ...ai, key: "" };
+	saveSettings(ai);
+	$("aikey").value = "";
+	$("aimsg").textContent = "Key removed from this browser.";
+};
 $("pick").onchange = (e) => {
 	const files = [...e.target.files];
 	e.target.value = "";

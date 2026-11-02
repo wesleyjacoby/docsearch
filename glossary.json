@@ -113,5 +113,341 @@
 	["incapacitation", "incapacitated", "unresponsive", "unconscious"],
 	["crosswind", "cross wind"],
 	["tailwind", "tail wind"],
-	["built up area", "built-up area", "built up areas", "congested area"]
+	["built up area", "built-up area", "built up areas", "congested area"],
+	["airplane", "aeroplane"],
+	["center", "centre"],
+	["organisation", "organization"],
+	["authorisation", "authorization", "authorise", "authorize"],
+	["initialization", "initialize", "initialisation", "initialise"],
+	["maneuver", "maneuvering", "manoeuvre", "manoeuvring"],
+	["cancelled", "canceled"],
+	["programme", "program"],
+	["licence", "license"],
+	["recognize", "recognise"],
+	["minimize", "minimise"],
+	["knots", "kias", "kts", "kt"],
+	["feet", "ft"],
+	["nm", "nautical miles", "nautical mile"],
+	["kg", "kgs", "kilograms"],
+	["atc", "ats", "air traffic control", "air traffic services"],
+	[
+		"occ",
+		"operations control centre",
+		"dispatcher",
+		"operations control center",
+		"ops control"
+	],
+	["sacaa", "regulator", "the authority", "caa", "civil aviation authority"],
+	["sa-car", "civil aviation regulations", "sacar", "cars regulations"],
+	["sa-cats", "civil aviation technical standards", "sacats"],
+	["hot battery bus", "hot bus"],
+	["standby power", "standby bus", "stby pwr"],
+	["battery", "batteries", "bat"],
+	[
+		"extinguisher",
+		"fire extinguisher",
+		"fire bottle",
+		"fire bottles",
+		"discharge bottle"
+	],
+	["fire warning", "engine fire", "engine fire switch", "fire handle"],
+	["stall", "shaker", "stick shaker", "stall warning"],
+	["overspeed", "over speed", "overspeed warning"],
+	["a/t", "autothrottle", "auto throttle", "thrust management", "autothrust"],
+	["flight director", "f/d"],
+	["altimeter", "barometric", "qnh", "altimeter setting", "baro setting"],
+	["pushback", "towing", "tow", "push back", "tug"],
+	[
+		"de-icing",
+		"de icing",
+		"anti icing fluid",
+		"holdover time",
+		"deicing",
+		"deice"
+	],
+	[
+		"anti ice",
+		"anti-ice",
+		"wing anti ice",
+		"icing conditions",
+		"engine anti ice"
+	],
+	["bird strike", "birdstrike", "bird ingestion"],
+	["lightning", "lightning strike", "struck by lightning"],
+	["turbulence", "severe turbulence", "turbulent air penetration", "rough air"],
+	["volcanic", "volcanic ash", "ash cloud"],
+	["fuel leak", "fuel loss", "leaking fuel", "fuel quantity decrease"],
+	[
+		"hydraulic leak",
+		"loss of hydraulic",
+		"hydraulic system failure",
+		"hyd leak",
+		"hydraulic fluid loss"
+	],
+	[
+		"trailing edge flap",
+		"flap asymmetry",
+		"flap failure",
+		"flaps stuck",
+		"flaps jammed",
+		"flaps inoperative"
+	],
+	["leading edge", "le", "slats", "slat"],
+	["vibration", "engine vibration", "high vibration"],
+	["oil pressure", "low oil pressure", "oil press"],
+	[
+		"pressurization",
+		"cabin pressure",
+		"cabin altitude warning",
+		"pressurisation"
+	],
+	["oxygen", "oxygen mask", "o2 mask", "oxy mask"],
+	["passenger", "passengers", "pax"],
+	["baggage", "checked baggage", "bags", "luggage", "hold baggage"],
+	[
+		"unruly passenger",
+		"disruptive passenger",
+		"unruly pax",
+		"unmanageable passenger"
+	],
+	[
+		"medical emergency",
+		"medical assistance",
+		"sick passenger",
+		"doctor on board",
+		"medical diversion"
+	],
+	[
+		"bomb threat",
+		"unlawful interference",
+		"hijack",
+		"security threat",
+		"bomb warning",
+		"bomb on board"
+	],
+	["evacuation", "emergency evacuation", "evacuate", "abandon aircraft"],
+	["ditching", "water landing", "forced landing", "forced landings"],
+	["rapid descent", "emergency descent"],
+	["holding", "holding pattern", "racetrack"],
+	[
+		"minima",
+		"minimums",
+		"aerodrome operating minima",
+		"landing minima",
+		"weather minima"
+	],
+	["visibility", "rvr", "runway visual range", "vis"],
+	["ceiling", "cloud base", "cloudbase"],
+	[
+		"standing water",
+		"contaminated runway",
+		"wet runway",
+		"slippery runway",
+		"water on runway"
+	],
+	["braking action", "friction", "poor braking", "runway friction"],
+	[
+		"maximum takeoff weight",
+		"mtow",
+		"maximum take off weight",
+		"max takeoff weight"
+	],
+	["maximum landing weight", "mlw", "max landing weight"],
+	["zero fuel weight", "zfw", "mzfw"],
+	["overweight", "overweight landing", "over weight landing"],
+	["fuel dumping", "jettison", "fuel jettison"],
+	[
+		"fdp",
+		"duty time",
+		"flight duty period",
+		"duty hours",
+		"flight time limitations",
+		"ftl"
+	],
+	["fatigue", "fatigue risk management", "frms", "tired"],
+	[
+		"recency",
+		"currency",
+		"90 day",
+		"recent experience",
+		"landings in last 90 days",
+		"landing currency"
+	],
+	[
+		"callouts",
+		"callout",
+		"call out",
+		"call outs",
+		"standard calls",
+		"standard call"
+	],
+	["checklist", "checklists", "check list"],
+	["briefing", "approach briefing", "self brief", "departure briefing"],
+	["resolution advisory", "tcas resolution advisory", "tcas ra"],
+	["traffic advisory", "tcas ta"],
+	["runway incursion", "incursion", "wrong runway", "runway confusion"],
+	["runway excursion", "overrun", "overrun protection"],
+	["line up", "lining up", "entering runway", "lineup"],
+	["observer", "jump seat", "jumpseat", "observer seat", "supernumerary"],
+	["escape slide", "evacuation slide", "slide raft"],
+	["life vests", "life jacket", "life vest", "lifejacket", "lifejackets"],
+	["life raft", "liferaft"],
+	["megaphone", "loud hailer", "loudhailer"],
+	["first aid", "first aid kit", "medical kit"],
+	[
+		"containment bag",
+		"fire containment bag",
+		"fire gloves",
+		"ped containment",
+		"fire bag",
+		"laptop fire"
+	],
+	[
+		"phone",
+		"ped",
+		"laptop",
+		"mobile phone",
+		"portable electronic device",
+		"cell phone",
+		"personal electronic device",
+		"tablet",
+		"cellphone",
+		"e-cigarette",
+		"vape"
+	],
+	["dangerous goods", "hazardous material", "hazardous materials", "hazmat"],
+	[
+		"atlr",
+		"deferred",
+		"deferral",
+		"technical log",
+		"defer",
+		"tech log",
+		"techlog",
+		"deferred defect"
+	],
+	["pack", "air conditioning", "packs", "aircon", "air con"],
+	[
+		"trim",
+		"stabilizer trim",
+		"stab trim",
+		"runaway stabilizer",
+		"runaway trim"
+	],
+	["gps", "gnss", "global positioning system", "satellite navigation"],
+	["irs", "inertial", "adiru", "inertial reference"],
+	[
+		"pitot",
+		"air data",
+		"pitot static",
+		"airspeed unreliable",
+		"unreliable airspeed",
+		"pitot blocked"
+	],
+	["radio altitude", "radio altimeter", "radar altimeter", "rad alt"],
+	["circling", "circling approach", "circle to land", "visual manoeuvring"],
+	[
+		"non precision",
+		"non precision approach",
+		"cdfa",
+		"ndb approach",
+		"npa",
+		"continuous descent final approach",
+		"vor approach",
+		"nonprecision"
+	],
+	["flare", "flare mode"],
+	["touchdown", "touchdown zone", "tdz", "touch down"],
+	["bounced", "bounced landing", "bounce"],
+	["hard landing", "heavy landing"],
+	[
+		"crosswind component",
+		"maximum crosswind",
+		"crosswind limits",
+		"crosswind limit",
+		"max crosswind"
+	],
+	["noise abatement", "nadp", "nadp 2", "nadp 1", "noise preferential"],
+	[
+		"derate",
+		"assumed temperature",
+		"reduced thrust",
+		"derated",
+		"derated thrust",
+		"flex",
+		"assumed temp"
+	],
+	["cost index", "econ speed", "economy speed"],
+	["step climb", "optimum altitude", "opt alt", "recommended altitude"],
+	[
+		"final reserve",
+		"reserve fuel",
+		"final reserve fuel",
+		"trip fuel",
+		"alternate fuel",
+		"contingency fuel",
+		"taxi fuel"
+	],
+	[
+		"incident",
+		"accident",
+		"occurrence",
+		"safety report",
+		"occurrence report",
+		"air safety report",
+		"asr"
+	],
+	["alcohol", "intoxicated", "drinking", "blood alcohol", "bottle to throttle"],
+	["sick", "illness", "unfit", "fit to fly", "unwell", "fitness to fly"],
+	[
+		"medical certificate",
+		"class 1 medical",
+		"medical validity",
+		"medical expiry"
+	],
+	[
+		"line check",
+		"recurrent training",
+		"proficiency check",
+		"lpc",
+		"opc",
+		"simulator check",
+		"sim check"
+	],
+	[
+		"cg",
+		"load sheet",
+		"weight and balance",
+		"center of gravity",
+		"trim sheet",
+		"centre of gravity",
+		"loadsheet"
+	],
+	["take off alternate", "takeoff alternate", "departure alternate"],
+	["enroute alternate", "enroute alternates", "en route alternate"],
+	[
+		"pilot incapacitation",
+		"crew incapacitation",
+		"pilot unwell",
+		"pilot collapse"
+	],
+	[
+		"flight control jam",
+		"control jam",
+		"jammed flight controls",
+		"jammed controls"
+	],
+	["balked", "balked landing", "rejected landing", "baulked landing"],
+	["gear not down", "gear unsafe", "landing gear unsafe", "gear disagree"],
+	["autopilot disengage", "autopilot disconnect", "a/p disconnect"],
+	[
+		"engine start",
+		"starter",
+		"hot start",
+		"no start",
+		"hung start",
+		"engine start malfunction"
+	],
+	["tailpipe fire", "engine tailpipe fire", "tail pipe fire"],
+	["wing tip", "wingtip", "wing tip clearance"]
 ]
